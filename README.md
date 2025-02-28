@@ -1,0 +1,1 @@
+# qgis-rotate_marker_symbol
