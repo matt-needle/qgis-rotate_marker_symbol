@@ -16,4 +16,7 @@
 ### Planned features
 - Support for the Marker sub-renderers of Point Cluster and Point Displacement renderers
 
+### Known issues
+- In the case where the QGIS application is closed while the symbol preview is visible, the (empty) temporary preview layer will persist in the project
+
 ### [Report a bug](https://github.com/matt-needle/qgis-rotate_marker_symbol/issues)
