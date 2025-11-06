@@ -1,5 +1,5 @@
 # Rotate Marker Symbol
-![rotate_marker_symbol_demo](https://github.com/user-attachments/assets/379220eb-beab-42fd-b1ed-d5acc01c68db)
+![rotate_marker_symbol_demo](https://github.com/user-attachments/assets/48e66b66-e783-4248-a2c2-a6f3797d7dcb)
 
 ### How to use
 - Activate the tool from the tool bar
