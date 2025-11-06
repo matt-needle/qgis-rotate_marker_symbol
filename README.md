@@ -13,9 +13,6 @@
 - The clicked feature is copied to a private temporary layer to create the semi-transparent preview symbol
 - The preview layer is removed from the project when the tool is deactivated
 
-### Planned features
-- Support for the Marker sub-renderers of Point Cluster and Point Displacement renderers
-
 ### Known issues
 - If the QGIS application is closed while the symbol preview is visible, the (empty) temporary preview layer will persist in the project
 
