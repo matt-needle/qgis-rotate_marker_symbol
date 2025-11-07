@@ -9,7 +9,7 @@
 - Left-click again to modify its rotation -- Or -- Right-click to cancel
 
 ### How it works
-- A field named `__rotation__` is added to the original point layer. This field is updated with the chosen rotation angle
+- A field named `__rotation__` is added to the original point layer. This field is updated with the rotation angle
 - The clicked feature is copied to a private temporary layer to create the semi-transparent preview symbol
 - The preview layer is removed from the project when the tool is deactivated
 
