@@ -27,7 +27,6 @@ import os.path
 
 from qgis.PyQt.QtGui import QIcon
 from qgis.PyQt.QtWidgets import QAction
-from qgis.core import QgsProject
 
 # Initialize Qt resources from file resources.py
 from .resources import *
