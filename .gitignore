@@ -1,0 +1,20 @@
+# Python cache and build artifacts
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# VS Code config
+.vscode/
+
+# Git itself (ignore nested repos if any)
+.git/
+
+# Translation and script directories
+i18n/
+scripts/
+test/
+
+# Environment and local setup files
+.env
+vscode-qgis.bat
