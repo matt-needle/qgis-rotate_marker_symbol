@@ -77,6 +77,9 @@ class PointSymbolRotator(QgsMapToolIdentifyFeature):
         self.snap_indicator = self.visual_manager.initialize_snap_indicator()
         self.snap_utils = canvas.snappingUtils()
         
+        # Connect to layer selection changes
+        self.iface.layerTreeView().currentLayerChanged.connect(self.on_layer_changed)
+        
         # Connect deactivation signal
         self.deactivated.connect(self.on_deactivate)
     
@@ -283,13 +286,44 @@ class PointSymbolRotator(QgsMapToolIdentifyFeature):
         
         return symbols
     
+    def on_layer_changed(self, layer):
+        """
+        Handle layer selection changes in the layer tree.
+        
+        This method is called when the user selects a different layer
+        in the layer tree, updating the active layer for the plugin.
+        
+        Args:
+            layer: The newly selected layer
+        """
+        # Update the active layer reference
+        self.layer = layer
+        
+        # Validate the new layer
+        self.is_valid = self.validator.validate(self.layer) if self.layer else False
+        
+        # Reset field manager if layer changed
+        if self.layer and (not self.field_manager or self.field_manager.layer != self.layer):
+            self.field_manager = RotationFieldManager(self.layer)
+        
+        # Cancel any active rotation when layer changes
+        if self.state.is_active:
+            self._cleanup_after_rotation()
+    
     def on_deactivate(self):
         """
         Handle tool deactivation.
         
         This cleans up all visual feedback, removes the preview layer,
-        and disconnects project signals when the tool is deactivated.
+        disconnects project signals, and disconnects layer change signal.
         """
+        # Disconnect layer change signal
+        try:
+            self.iface.layerTreeView().currentLayerChanged.disconnect(self.on_layer_changed)
+        except TypeError:
+            # Signal was already disconnected
+            pass
+        
         self.visual_manager.clear()
         self.preview_manager.cleanup()  # Now includes signal disconnection
         self.state.reset()
