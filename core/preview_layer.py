@@ -72,7 +72,8 @@ class PreviewLayerManager:
             self.preview_layer = existing_layers[0]
         else:
             self.preview_layer = self._create_preview_layer(source_layer)
-            self.project.addMapLayer(self.preview_layer)
+            # Add layer without showing it in the layer tree (addToLegend=False)
+            self.project.addMapLayer(self.preview_layer, addToLegend=False)
         
         return self.preview_layer
     
@@ -224,6 +225,7 @@ class PreviewLayerManager:
         This ensures the preview layer is removed before:
         - The project is saved (prevents it from being saved in the project file)
         - The project is closed (cleanup)
+        - The project is read/opened (cleanup any preview layers that were saved)
         """
         if not self._signals_connected:
             # Remove preview layer before project is saved
@@ -231,6 +233,9 @@ class PreviewLayerManager:
             
             # Remove preview layer when project is about to be cleared/closed
             self.project.aboutToBeCleared.connect(self._cleanup_on_close)
+            
+            # Remove preview layer after project is read/opened
+            self.project.projectRead.connect(self._cleanup_on_project_read)
             
             self._signals_connected = True
     
@@ -244,6 +249,7 @@ class PreviewLayerManager:
             try:
                 self.project.writeProject.disconnect(self._cleanup_before_save)
                 self.project.aboutToBeCleared.disconnect(self._cleanup_on_close)
+                self.project.projectRead.disconnect(self._cleanup_on_project_read)
             except TypeError:
                 # Signal was already disconnected
                 pass
@@ -270,6 +276,26 @@ class PreviewLayerManager:
         if self.preview_layer:
             # Clean up the preview layer
             self.remove_from_project()
+    
+    def _cleanup_on_project_read(self):
+        """
+        Clean up preview layer after project is opened.
+        
+        This removes any preview layers that may have been saved in the project file.
+        Called automatically when projectRead signal fires.
+        """
+        # Look for any layers with our UUID name
+        existing_layers = self.project.mapLayersByName(self.UUID)
+        
+        for layer in existing_layers:
+            try:
+                self.project.removeMapLayer(layer)
+            except RuntimeError:
+                # Layer may have already been removed
+                pass
+        
+        # Reset the preview layer reference
+        self.preview_layer = None
     
     def cleanup(self):
         """
