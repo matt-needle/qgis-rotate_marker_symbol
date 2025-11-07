@@ -33,11 +33,11 @@ from qgis.core import QgsProject
 # Initialize Qt resources from file resources.py
 from .resources import *
 
-# Import the refactored worker (use refactored version for new code)
-from .rotate_marker_symbol_worker import PointSymbolRotator
+# Import the refactored worker from core module
+from .core.rotate_marker_symbol_worker import PointSymbolRotator
 
 # Legacy import kept for backwards compatibility
-# from .rotate_marker_symbol_worker import PointSymbolRotator as PointSymbolRotatorLegacy
+# from .core.rotate_marker_symbol_worker import PointSymbolRotator as PointSymbolRotatorLegacy
 
 class RotateMarkerSymbol:
     """
