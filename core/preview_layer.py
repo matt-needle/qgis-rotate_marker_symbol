@@ -65,15 +65,16 @@ class PreviewLayerManager:
         Returns:
             QgsVectorLayer: The preview layer
         """
-        # Check if preview layer already exists
-        existing_layers = self.project.mapLayersByName(self.UUID)
+        # Check if preview layer already exists in project
+        existing_layers = [lyr for lyr in self.project.mapLayers().values() 
+                          if lyr.name() == self.UUID]
         
         if existing_layers:
             self.preview_layer = existing_layers[0]
         else:
             self.preview_layer = self._create_preview_layer(source_layer)
-            # Add layer without showing it in the layer tree (addToLegend=False)
-            self.project.addMapLayer(self.preview_layer, addToLegend=False)
+            # Add layer normally - the Private flag keeps it out of layers panel
+            self.project.addMapLayer(self.preview_layer)
         
         return self.preview_layer
     
@@ -235,7 +236,7 @@ class PreviewLayerManager:
             self.project.aboutToBeCleared.connect(self._cleanup_on_close)
             
             # Remove preview layer after project is read/opened
-            self.project.projectRead.connect(self._cleanup_on_project_read)
+            self.project.readProject.connect(self._cleanup_on_project_read)
             
             self._signals_connected = True
     
@@ -249,7 +250,7 @@ class PreviewLayerManager:
             try:
                 self.project.writeProject.disconnect(self._cleanup_before_save)
                 self.project.aboutToBeCleared.disconnect(self._cleanup_on_close)
-                self.project.projectRead.disconnect(self._cleanup_on_project_read)
+                self.project.readProject.disconnect(self._cleanup_on_project_read)
             except TypeError:
                 # Signal was already disconnected
                 pass
@@ -282,10 +283,11 @@ class PreviewLayerManager:
         Clean up preview layer after project is opened.
         
         This removes any preview layers that may have been saved in the project file.
-        Called automatically when projectRead signal fires.
+        Called automatically when readProject signal fires.
         """
-        # Look for any layers with our UUID name
-        existing_layers = self.project.mapLayersByName(self.UUID)
+        # Look for any layers with our UUID name in all project layers
+        existing_layers = [lyr for lyr in self.project.mapLayers().values() 
+                          if lyr.name() == self.UUID]
         
         for layer in existing_layers:
             try:

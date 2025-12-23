@@ -66,6 +66,22 @@ class RotationState:
         self.drawing_guide = True
         self.is_active = True
     
+    def set_azimuth(self, raw_azimuth: float):
+        """
+        Set the azimuth, normalizing from -180 to 180 range to 0 to 360 range.
+        
+        QgsPointXY.azimuth() returns values from -180 to 180,
+        but we want to store rotation as 0 to 360.
+        
+        Args:
+            raw_azimuth: The raw azimuth value from QgsPointXY.azimuth()
+        """
+        # Normalize from -180..180 to 0..360
+        if raw_azimuth < 0:
+            self.azimuth = raw_azimuth + 360.0
+        else:
+            self.azimuth = raw_azimuth
+    
     def finish_rotation(self):
         """
         Complete the current rotation operation and reset state.

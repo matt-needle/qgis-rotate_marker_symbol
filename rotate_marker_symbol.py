@@ -27,6 +27,7 @@ import os.path
 
 from qgis.PyQt.QtGui import QIcon
 from qgis.PyQt.QtWidgets import QAction
+from qgis.core import QgsProject
 
 # Initialize Qt resources from file resources.py
 from .resources import *
@@ -196,9 +197,9 @@ class RotateMarkerSymbol:
         Remove the plugin menu item and icon from QGIS GUI.
         
         This is called when the plugin is unloaded. It cleans up all
-        UI elements, removes the map tool, and ensures the preview layer
-        and all signal connections are properly cleaned up.
+        UI elements and the map tool.
         """
+        
         for action in self.actions:
             self.iface.removePluginVectorMenu(
                 self.tr(u'&Rotate Marker Symbol'),
@@ -208,8 +209,6 @@ class RotateMarkerSymbol:
 
         # Clean up map tool if it exists
         if self.point_symbol_rotator:
-            # Ensure complete cleanup including preview layer and signals
-            self.point_symbol_rotator.preview_manager.cleanup()
             self.point_symbol_rotator.visual_manager.clear()
         
         # Clean up translation manager

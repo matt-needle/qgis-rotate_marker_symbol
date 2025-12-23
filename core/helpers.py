@@ -56,7 +56,12 @@ class LayerEditingContext:
         """
         if not self.was_editing:
             if exc_type is None:
-                self.layer.commitChanges()
+                # Commit changes and stop editing
+                # stopEditing=True ensures we leave the layer in non-edit mode
+                success = self.layer.commitChanges(stopEditing=True)
+                if not success:
+                    # If commit failed, try to rollback
+                    self.layer.rollBack()
             else:
                 self.layer.rollBack()
         return False

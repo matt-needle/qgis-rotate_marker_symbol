@@ -3,13 +3,15 @@
 Visual feedback management for the Rotate Marker Symbol plugin.
 
 This module handles all visual feedback elements including rubber bands,
-snap indicators, and visual guides shown during rotation operations.
+snap indicators, symbol previews, and visual guides shown during rotation operations.
 """
 
-from typing import List, Tuple
-from qgis.core import Qgis, QgsGeometry, QgsPointXY
+from typing import List, Optional
+from qgis.core import Qgis, QgsGeometry, QgsPointXY, QgsSymbol
 from qgis.gui import QgsRubberBand, QgsSnapIndicator
 from qgis.PyQt.QtGui import QColor
+
+from .symbol_preview import SymbolPreviewManager
 
 
 class VisualFeedbackManager:
@@ -19,6 +21,7 @@ class VisualFeedbackManager:
     This class handles:
     - Rubber bands for highlighting selected points
     - Guide lines showing rotation direction
+    - Symbol previews showing rotated symbol
     - Snap indicators for precise positioning
     """
     
@@ -37,8 +40,9 @@ class VisualFeedbackManager:
         """
         self.canvas = canvas
         self.rubber_bands: List[QgsRubberBand] = []
-        self.guide_rubber_band: QgsRubberBand = None
-        self.snap_indicator: QgsSnapIndicator = None
+        self.guide_rubber_band: Optional[QgsRubberBand] = None
+        self.snap_indicator: Optional[QgsSnapIndicator] = None
+        self.symbol_preview_manager = SymbolPreviewManager(canvas)
     
     def create_point_rubber_band(self, point: QgsPointXY):
         """
@@ -113,8 +117,36 @@ class VisualFeedbackManager:
         self.rubber_bands.clear()
         self.guide_rubber_band = None
     
+    def create_symbol_preview(self, point: QgsPointXY, symbol: QgsSymbol, 
+                               initial_rotation: float = 0.0):
+        """
+        Create a symbol preview at the specified point.
+        
+        Args:
+            point: Map coordinates for the preview
+            symbol: The symbol to preview
+            initial_rotation: Initial rotation angle in degrees
+        """
+        self.symbol_preview_manager.create_preview(point, symbol, initial_rotation)
+    
+    def update_symbol_rotation(self, angle: float):
+        """
+        Update the symbol preview rotation.
+        
+        Args:
+            angle: The new rotation angle in degrees
+        """
+        self.symbol_preview_manager.update_rotation(angle)
+    
+    def remove_symbol_preview(self):
+        """Remove the symbol preview from the canvas."""
+        self.symbol_preview_manager.remove_preview()
+    
     def clear(self):
         """
-        Alias for remove_all_rubber_bands for convenience.
+        Remove all visual feedback elements from the canvas.
+        
+        This removes rubber bands and symbol preview.
         """
         self.remove_all_rubber_bands()
+        self.remove_symbol_preview()

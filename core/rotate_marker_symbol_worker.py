@@ -15,9 +15,9 @@ from .helpers import LayerEditingContext, MessageHelper, MouseButton
 from .validators import LayerValidator
 from .field_manager import RotationFieldManager
 from .visual_feedback import VisualFeedbackManager
-from .preview_layer import PreviewLayerManager
 from .rotation_state import RotationState
 from .snapping_config import SnappingConfigManager
+from .symbol_preview import SymbolPreviewManager
 
 
 class PointSymbolRotator(QgsMapToolIdentifyFeature):
@@ -36,7 +36,7 @@ class PointSymbolRotator(QgsMapToolIdentifyFeature):
     The tool provides real-time visual feedback through:
     - A highlighted point showing the selected feature
     - A guide line showing the rotation direction
-    - A preview layer showing how the rotated symbol will look
+    - A symbol preview showing the rotated symbol directly on canvas
     - Snapping to allow precise angle alignment
     """
     
@@ -60,7 +60,6 @@ class PointSymbolRotator(QgsMapToolIdentifyFeature):
         self.message_helper = MessageHelper(iface)
         self.validator = LayerValidator(self.message_helper)
         self.visual_manager = VisualFeedbackManager(canvas)
-        self.preview_manager = PreviewLayerManager(self.project, iface)
         self.snapping_manager = SnappingConfigManager(self.project)
         
         # State management
@@ -105,15 +104,6 @@ class PointSymbolRotator(QgsMapToolIdentifyFeature):
         # Initialize field manager for this layer
         if not self.field_manager or self.field_manager.layer != self.layer:
             self.field_manager = RotationFieldManager(self.layer)
-        
-        # Ensure preview layer exists
-        preview_layer = self.preview_manager.get_or_create_preview_layer(self.layer)
-        
-        # Make sure the original layer stays active
-        self.iface.setActiveLayer(self.layer)
-        
-        # Copy renderer to preview layer
-        self.preview_manager.copy_renderer(self.layer)
     
     def canvasReleaseEvent(self, event):
         """
@@ -167,14 +157,12 @@ class PointSymbolRotator(QgsMapToolIdentifyFeature):
             end_point = event.mapPoint()
             self.visual_manager.update_guide_line(self.state.src_point, end_point)
             
-            # Calculate and store azimuth
-            self.state.azimuth = self.state.src_point.azimuth(end_point)
+            # Calculate and store azimuth (normalized to 0-360)
+            raw_azimuth = self.state.src_point.azimuth(end_point)
+            self.state.set_azimuth(raw_azimuth)
             
             # Update preview with current rotation
-            preview_symbols = self.preview_manager.get_symbols()
-            if self.field_manager:
-                self.field_manager.set_dynamic_rotation(preview_symbols, self.state.azimuth)
-                self.preview_manager.get_layer().triggerRepaint()
+            self.visual_manager.update_symbol_rotation(self.state.azimuth)
     
     def _start_rotation(self, event):
         """
@@ -210,16 +198,14 @@ class PointSymbolRotator(QgsMapToolIdentifyFeature):
         # Initialize state
         self.state.start_rotation(feature, field_index)
         
-        # Clear any previous preview
-        self.preview_manager.clear_features()
-        self.preview_manager.update_fields(self.layer)
-        
         # Set up visual feedback
         self.visual_manager.create_point_rubber_band(self.state.src_point)
         self.visual_manager.create_guide_line()
         
-        # Show preview
-        self.preview_manager.set_preview_feature(feature)
+        # Create symbol preview with the feature's symbol
+        symbol = self._get_feature_symbol(feature)
+        if symbol:
+            self.visual_manager.create_symbol_preview(self.state.src_point, symbol)
     
     def _commit_rotation(self):
         """
@@ -252,8 +238,7 @@ class PointSymbolRotator(QgsMapToolIdentifyFeature):
         """
         Clean up visual feedback and state after rotation is complete or canceled.
         """
-        self.visual_manager.remove_all_rubber_bands()
-        self.preview_manager.clear_features()
+        self.visual_manager.clear()
         self.state.reset()
     
     def _get_layer_symbols(self) -> list:
@@ -286,6 +271,22 @@ class PointSymbolRotator(QgsMapToolIdentifyFeature):
         
         return symbols
     
+    def _get_feature_symbol(self, feature):
+        """
+        Get the symbol used to render a specific feature.
+        
+        This method handles different renderer types (single symbol,
+        categorized, graduated, rule-based) to return the correct symbol
+        for the given feature.
+        
+        Args:
+            feature: The QgsFeature to get the symbol for
+            
+        Returns:
+            QgsSymbol: The symbol for this feature, or None if not found
+        """
+        return SymbolPreviewManager.get_feature_symbol(self.layer, feature)
+    
     def on_layer_changed(self, layer):
         """
         Handle layer selection changes in the layer tree.
@@ -296,6 +297,12 @@ class PointSymbolRotator(QgsMapToolIdentifyFeature):
         Args:
             layer: The newly selected layer
         """
+        # Only update if we actually have a layer
+        if layer is None:
+            self.layer = None
+            self.is_valid = False
+            return
+        
         # Update the active layer reference
         self.layer = layer
         
@@ -314,18 +321,16 @@ class PointSymbolRotator(QgsMapToolIdentifyFeature):
         """
         Handle tool deactivation.
         
-        This cleans up all visual feedback, removes the preview layer,
-        disconnects project signals, and disconnects layer change signal.
+        This cleans up all visual feedback and disconnects layer change signal.
         """
         # Disconnect layer change signal
         try:
             self.iface.layerTreeView().currentLayerChanged.disconnect(self.on_layer_changed)
-        except TypeError:
+        except (TypeError, RuntimeError):
             # Signal was already disconnected
             pass
         
         self.visual_manager.clear()
-        self.preview_manager.cleanup()  # Now includes signal disconnection
         self.state.reset()
     
     def __del__(self):
