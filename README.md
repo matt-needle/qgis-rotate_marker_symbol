@@ -12,7 +12,7 @@
 
 ### How it works
 - A field named `_rotation_` is added to the original point layer. This field is updated with the rotation angle
-- The clicked feature's symbol is cloned and rendered on the the map canvas as a [QgsMapCanvasItem]((https://qgis.org/pyqgis/master/gui/QgsMapCanvasItem.html) to create the semi-transparent preview symbol
+- The clicked feature's symbol is cloned and rendered on the the map canvas as a [QgsMapCanvasItem](https://qgis.org/pyqgis/master/gui/QgsMapCanvasItem.html) to create the semi-transparent preview symbol
 - A guide line appears between the symbol and the mouse cursor to assist in precise rotation towards another feature or location on the map canvas
 - The preview and guide line are removed from the project when the tool is deactivated
 
