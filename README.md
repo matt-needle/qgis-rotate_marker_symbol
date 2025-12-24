@@ -1,6 +1,5 @@
 # Rotate Marker Symbol
-This tool is designed to be an improvement on the native Rotate Point Symbols tool. Rotation using this tool follows the mouse cursor excactly and a guideline appears to assist in precise rotation towards another feature or location on the map canvas  
-
+This tool is designed to be an improvement on the native Rotate Point Symbols tool. Rotation using this tool follows the mouse cursor exactly and a guideline appears to assist in precise rotation towards another feature or location on the map canvas  
 ![rotate_marker_symbol_demo](https://github.com/user-attachments/assets/48e66b66-e783-4248-a2c2-a6f3797d7dcb)
 
 ### How to use
