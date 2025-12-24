@@ -2,7 +2,9 @@
 ![rotate_marker_symbol_demo](https://github.com/user-attachments/assets/48e66b66-e783-4248-a2c2-a6f3797d7dcb)
 
 ### How to use
-- Activate the tool from the tool bar
+- Find the tool in the Advanced Digitizing toolbar (editing does *not* need to be active)
+<img width="712" height="51" alt="image" src="https://github.com/user-attachments/assets/6992aa35-e337-42cc-b6ed-ccc5552c9606" />
+
 - Select a point layer from the Layers Panel (with a Single Symbol, Categorized, Graduated, or Rule-based renderer)
 - Left-click a point to begin rotating
 - Use the guideline to rotate exactly where desired
