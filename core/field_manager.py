@@ -22,7 +22,7 @@ class RotationFieldManager:
     - Setting up data-defined symbol rotation
     """
     
-    ROTATION_FIELD = '__rotation__'
+    ROTATION_FIELD = '_rotation_'
     
     def __init__(self, layer):
         """

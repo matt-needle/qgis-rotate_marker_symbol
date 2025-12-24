@@ -56,6 +56,9 @@ class SymbolPreviewCanvasItem(QgsMapCanvasItem):
         self._rotation = 0.0
         self._opacity = self.DEFAULT_OPACITY
         
+        # Apply initial opacity to symbol layers
+        self._apply_opacity_to_symbol()
+        
         # Set initial position
         self._update_position()
         
@@ -69,6 +72,19 @@ class SymbolPreviewCanvasItem(QgsMapCanvasItem):
             # Convert map point to canvas coordinates
             canvas_point = self.toCanvasCoordinates(self._point)
             self.setPos(canvas_point)
+    
+    def _apply_opacity_to_symbol(self):
+        """
+        Apply the current opacity to the symbol.
+        
+        This ensures the opacity is preserved during rendering, as the
+        painter opacity can be overridden by the symbol's own rendering.
+        """
+        if not self._symbol:
+            return
+        
+        # QgsSymbol has setOpacity at the symbol level
+        self._symbol.setOpacity(self._opacity)
     
     def setRotation(self, angle: float):
         """
@@ -95,6 +111,7 @@ class SymbolPreviewCanvasItem(QgsMapCanvasItem):
             opacity: Opacity value between 0.0 (transparent) and 1.0 (opaque)
         """
         self._opacity = max(0.0, min(1.0, opacity))
+        self._apply_opacity_to_symbol()
         self.update()
     
     def boundingRect(self) -> QRectF:

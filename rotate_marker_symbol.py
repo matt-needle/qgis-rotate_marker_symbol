@@ -35,9 +35,6 @@ from .resources import *
 # Import the refactored worker from core module
 from .core.rotate_marker_symbol_worker import PointSymbolRotator
 
-# Import the translation manager
-from .core.translation_manager import TranslationManager
-
 
 class RotateMarkerSymbol:
     """
@@ -50,7 +47,6 @@ class RotateMarkerSymbol:
     Attributes:
         iface: QGIS interface instance
         plugin_dir: Directory containing the plugin
-        translation_manager: Handles plugin translations
         actions: List of QAction objects added by this plugin
         menu: Name of the plugin's menu
         toolbar: The plugin's toolbar (if created)
@@ -72,16 +68,10 @@ class RotateMarkerSymbol:
         
         # Initialize plugin directory
         self.plugin_dir = os.path.dirname(__file__)
-        
-        # Initialize translation manager
-        self.translation_manager = TranslationManager(
-            plugin_name='RotateMarkerSymbol',
-            plugin_dir=self.plugin_dir
-        )
 
         # Declare instance attributes
         self.actions = []
-        self.menu = self.tr(u'&Rotate Marker Symbol')
+        self.menu = '&Rotate Marker Symbol'
 
         # Plugin state
         # Must be set in initGui() to survive plugin reloads
@@ -89,20 +79,6 @@ class RotateMarkerSymbol:
         
         # Map tool instance
         self.point_symbol_rotator = None
-
-    def tr(self, message):
-        """
-        Get the translation for a string using Qt translation API.
-
-        We implement this ourselves since we do not inherit QObject.
-
-        Args:
-            message: String for translation
-
-        Returns:
-            str: Translated version of message
-        """
-        return self.translation_manager.tr(message)
 
 
     def add_action(
@@ -167,8 +143,8 @@ class RotateMarkerSymbol:
             action.setWhatsThis(whats_this)
 
         if add_to_toolbar:
-            # Adds plugin icon to Plugins toolbar
-            self.iface.addToolBarIcon(action)
+            # Add plugin icon to Advanced Digitizing toolbar
+            self.iface.advancedDigitizeToolBar().addAction(action)
 
         if add_to_menu:
             self.iface.addPluginToVectorMenu(
@@ -183,11 +159,15 @@ class RotateMarkerSymbol:
         """Create the menu entries and toolbar icons inside the QGIS GUI."""
 
         icon_path = ':/plugins/rotate_marker_symbol/icon.png'
-        self.add_action(
+        self.action = self.add_action(
             icon_path,
-            text=self.tr(u'Rotate Marker Symbol'),
+            text='Rotate Marker Symbol',
             callback=self.run,
             parent=self.iface.mainWindow())
+        self.action.setCheckable(True)
+        
+        # Connect to map tool change signal
+        self.iface.mapCanvas().mapToolSet.connect(self.map_tool_changed)
 
         # will be set False in run()
         self.first_start = True
@@ -202,20 +182,38 @@ class RotateMarkerSymbol:
         
         for action in self.actions:
             self.iface.removePluginVectorMenu(
-                self.tr(u'&Rotate Marker Symbol'),
+                '&Rotate Marker Symbol',
                 action
             )
-            self.iface.removeToolBarIcon(action)
+            self.iface.advancedDigitizeToolBar().removeAction(action)
+        
+        # Disconnect map tool change signal
+        try:
+            self.iface.mapCanvas().mapToolSet.disconnect(self.map_tool_changed)
+        except:
+            pass
 
         # Clean up map tool if it exists
         if self.point_symbol_rotator:
             self.point_symbol_rotator.visual_manager.clear()
-        
-        # Clean up translation manager
-        if self.translation_manager:
-            self.translation_manager.unload()
+            # Unset map tool if it's ours
+            if self.iface.mapCanvas().mapTool() == self.point_symbol_rotator:
+                self.iface.mapCanvas().unsetMapTool(self.point_symbol_rotator)
 
-    def run(self):
+    def map_tool_changed(self, new_tool, old_tool):
+        """
+        Handle map tool changes to update action state.
+        
+        Args:
+            new_tool: The new map tool
+            old_tool: The previous map tool
+        """
+        if self.point_symbol_rotator and new_tool == self.point_symbol_rotator:
+            self.action.setChecked(True)
+        else:
+            self.action.setChecked(False)
+
+    def run(self, checked):
         """
         Run method that activates the rotation map tool.
         
@@ -229,7 +227,12 @@ class RotateMarkerSymbol:
 
         canvas = self.iface.mapCanvas()
 
-        # Store the instantiated map tool as a class attribute
-        # This prevents garbage collection from destroying it before it can run
-        self.point_symbol_rotator = PointSymbolRotator(canvas, self.iface)
-        canvas.setMapTool(self.point_symbol_rotator)
+        if checked:
+            # Activate tool
+            # Store the instantiated map tool as a class attribute
+            # This prevents garbage collection from destroying it before it can run
+            self.point_symbol_rotator = PointSymbolRotator(canvas, self.iface)
+            canvas.setMapTool(self.point_symbol_rotator)
+        else:
+            # Deactivate tool
+            canvas.unsetMapTool(self.point_symbol_rotator)

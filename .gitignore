@@ -18,3 +18,4 @@ test/
 # Environment and local setup files
 .env
 vscode-qgis.bat
+resources.qrc
