@@ -19,3 +19,6 @@ test/
 .env
 vscode-qgis.bat
 resources.qrc
+
+# Old icon assets
+resources/icon\ old/
